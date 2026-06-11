@@ -1,279 +1,227 @@
 import React from "react";
-import { Button } from "antd";
-import {
-  Card,
-  CardActions,
-  CardContent,
-  CardMedia,
-  Typography,
-  Box,
-} from "@mui/material";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import { signInWithGoogle } from "../auth/authService";
-import { useState, useEffect } from "react";
-import { MapPin, ArrowRight } from "lucide-react";
-import { motion, useInView } from "framer-motion";
+import { motion } from "framer-motion";
+import { ArrowRight, Leaf, Users, CalendarCheck } from "lucide-react";
 
-function Homepage() {
-  const [isSignedIn, setIsSignedIn] = useState(false);
-  const auth = getAuth();
-  const navigate = useNavigate();
+const fadeUp = {
+  hidden: { opacity: 0, y: 30 },
+  show: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] },
+  }),
+};
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setIsSignedIn(true); // User is signed in
-        console.log("User is signed in: ", user.displayName);
-      } else {
-        setIsSignedIn(false); // User is signed out
-        console.log("No user is signed in");
-      }
-    });
+const features = [
+  {
+    icon: <Leaf size={24} />,
+    step: "01",
+    title: "Plant the seed",
+    body: "Create and manage sustainability events in minutes. Clean-up drives, eco workshops, green meetups — our platform handles the logistics so you can focus on impact.",
+  },
+  {
+    icon: <Users size={24} />,
+    step: "02",
+    title: "Grow the community",
+    body: "Join local efforts and build a network of people who care. Every event you attend plants deeper roots in your community's commitment to the planet.",
+  },
+  {
+    icon: <CalendarCheck size={24} />,
+    step: "03",
+    title: "Preserve the forest",
+    body: "Track your impact over time. Collective small actions compound into real change — and EnviroPact keeps the momentum going, one event at a time.",
+  },
+];
 
-    return () => unsubscribe();
-  }, [auth]);
-
-  const handleSignIn = async () => {
-    try {
-      await signInWithGoogle();
-    } catch (error) {
-      console.error("Sign-in error:", error);
-    }
-  };
-
-  const { ref: eventsRef, inView: eventsInView } = useInView({
-    triggerOnce: true,
-    threshold: 0.2,
-  });
-
+function Navbar({ navigate }) {
   return (
-    <>
-      <div
-        className="mx-auto flex flex-col items-center"
-        style={{ backgroundColor: "#003310" }}
+    <motion.header
+      className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4"
+      style={{ background: "linear-gradient(to bottom, rgba(4,15,7,0.95) 0%, rgba(4,15,7,0) 100%)" }}
+      initial={{ opacity: 0, y: -16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+    >
+      <button
+        onClick={() => navigate("/")}
+        className="flex items-center gap-2.5 group"
       >
-        <motion.nav
-          className="md:w-2/5 lg:4/5 px-4 py-4 backdrop-blur-md bg-white/50 rounded-md sticky top-5 flex justify-center items-center z-10"
-          initial={{ opacity: 0, y: -50 }} // Starting state (invisible and moved up)
-          animate={{ opacity: 1, y: 0 }} // End state (fully visible and back to position)
-          transition={{ duration: 0.3, ease: "easeOut" }} // Animation duration and easing
+        <div className="w-8 h-8 rounded-lg bg-lime-400 flex items-center justify-center">
+          <img src="/assets/images/tree-icon.svg" className="w-5 h-5" />
+        </div>
+        <span className="text-white font-bold text-lg tracking-tight">EnviroPact</span>
+      </button>
+
+      <nav className="flex items-center gap-8">
+        <button
+          onClick={() => navigate("/events")}
+          className="text-sm text-zinc-400 hover:text-white transition-colors"
         >
-          <ul className="flex items-center justify-center gap-4">
-            <li
-              onClick={() => navigate("/events")}
-              className="flex items-center justify-center text-lg text-black geist-reg hover:cursor-pointer mr-40"
-            >
-              <img
-                src="../../assets/images/tree-icon.svg"
-                className="px-2 w-10"
-              />
-              <p className="text-green-950 geist-bold">EnviroPact</p>
-            </li>
-            <li>
-              {!isSignedIn && (
-                <Button
-                  type="primary"
-                  className="text-md text-black geist-reg"
-                  style={{ background: "rgb(132 204 22)" }}
-                  onClick={handleSignIn}
-                >
-                  Sign In
-                </Button>
-              )}
-            </li>
-            <li className="hover:text-white">
-              <a onClick={() => navigate("/about")} style={{cursor: "pointer"}}>Contact</a>
-            </li>
-            <li className="hover:text-white">
-              <a onClick={() => navigate("/events")} style={{cursor: "pointer"}}>Events</a>
-            </li>
-          </ul>
-        </motion.nav>
-
-        {/*Hero Page */}
-        <section className="min-h-screen w-full bg-[url('../../assets/images/hero-home-background.svg')] bg-cover bg-no-repeat bg-right-bottom">
-          <div className="flex flex-col px-20 py-20 max-w-full gap-4">
-            <motion.h1
-              className="font-bold text-6xl text-zinc-300 geist-reg leading-tight"
-              initial={{ opacity: 0, x: -100 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              Preserve your pact
-              <br />
-              with the Earth.
-            </motion.h1>
-            <motion.div
-              className="pb-5 text-lg max-w-full"
-              initial={{ opacity: 0, x: 100 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <p className="text-lime-500 text-lg geist-reg">
-                A new way to engage with your community and better
-                <br /> the Earth together, one trash bag at a time.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <Button
-                type="primary"
-                size="large"
-                className="text-md text-green-950 geist-reg"
-                style={{
-                  background:
-                    "linear-gradient(to right, rgb(132, 204, 22), rgb(211,211,211))",
-                  border: "none",
-                }}
-                onClick={() => navigate("/events")}
-              >
-                Join an event near you
-                <ArrowRight className="h-6 ml-1.5" />
-              </Button>
-            </motion.div>
-          </div>
-        </section>
-        {/**slide 1 */}
-        <section className="min-h-screen w-full flex flex-col items-center justify-center">
-          <div className="w-full flex flex-col items-center justify-center pt-40 pr-48 pl-48 gap-20">
-            <motion.h1
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ duration: 2 }}
-              className="font-bold text-6xl text-white geist-reg"
-            >
-              What you can do with EnviroPact
-            </motion.h1>
-            <div className="w-full flex justify-center items-center gap-20">
-              <motion.img
-                className="w-72"
-                src="../../assets/images/iphone-background-1.svg"
-                alt="iphone image"
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                transition={{ duration: 2 }}
-              />
-              <div className="w-1/2 flex flex-col items-start justify-center gap-8">
-                {/**headline */}
-                <div className="flex items-center justify-center gap-4">
-                  <img
-                    className="w-10"
-                    src="../../assets/images/count-1.svg"
-                    alt="count-1"
-                  />
-                  <p className="text-4xl text-white">
-                    “Plant the <span style={{ color: "#C7EF4E" }}>seed</span>”
-                  </p>
-                </div>
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  transition={{ duration: 2 }}
-                  className="text-xl text-white geist-reg"
-                >
-                  With our streamlined event hosting app, you and your
-                  organization can easily plan and manage sustainability events
-                  that bring positive change to your community. <br />
-                  <br />
-                  Whether it's clean-up drives, eco-friendly workshops, or green
-                  business meetups, our platform simplifies the process, helping
-                  you organize events that matter with just a few clicks.
-                </motion.p>
-              </div>
-            </div>
-          </div>
-        </section>
-        {/**slide2 */}
-        <section className="h-fit w-full flex flex-col items-center justify-center">
-          <div className="h-full w-full flex flex-col items-start justify-start pr-48 pl-48">
-            <div className="w-full flex justify-center items-center gap-20">
-              <div className="w-1/2 flex flex-col items-start justify-center gap-8">
-                {/**headline */}
-                <div className="flex items-center justify-center gap-4">
-                  <img
-                    className="w-10"
-                    src="../../assets/images/count-2.svg"
-                    alt="count-1"
-                  />
-                  <p className="text-4xl text-white">
-                    “<span style={{ color: "#C7EF4E" }}>Grow</span> the
-                    community's tree”
-                  </p>
-                </div>
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  transition={{ duration: 2 }}
-                  className="text-xl text-white geist-reg"
-                >
-                  Joining local sustainability efforts to helps to build a
-                  greener future for all. Every action counts—get involved, make
-                  a lasting impact, and inspire others to do the same. Start
-                  today with enviro-pact.
-                </motion.p>
-              </div>
-              <motion.img
-                className="w-72"
-                src="../../assets/images/iphone-background-2.svg"
-                alt="iphone image"
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                transition={{ duration: 2 }}
-              />
-            </div>
-          </div>
-        </section>
-        {/**slide3 */}
-        <section className="h-fit w-full flex flex-col items-center justify-center">
-          <div className="w-full flex flex-col items-center justify-center pr-48 pl-48">
-            <div className="w-full flex justify-center items-center gap-20">
-              <motion.img
-                className="w-72"
-                src="../../assets/images/iphone-background-3.svg"
-                alt="iphone image"
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                transition={{ duration: 2 }}
-              />
-              <div className="w-1/2 flex flex-col items-start justify-center gap-8">
-                {/**headline */}
-                <div className="flex items-center justify-center gap-4">
-                  <img
-                    className="w-10"
-                    src="../../assets/images/count-3.svg"
-                    alt="count-3"
-                  />
-                  <p className="text-4xl text-white">
-                    “<span style={{ color: "#C7EF4E" }}>Preserve</span> the
-                    forest”
-                  </p>
-                </div>
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  transition={{ duration: 2 }}
-                  className="text-xl text-white geist-reg"
-                >
-                  Joining local sustainability efforts to helps to build a
-                  greener future for all. Every action counts—get involved, make
-                  a lasting impact, and inspire others to do the same. Start
-                  today with enviro-pact.
-                </motion.p>
-              </div>
-            </div>
-          </div>
-        </section>
-        <footer className="text-center bg-white h-10 w-full">
-          2024 EnviroPact
-        </footer>
-      </div>
-    </>
+          Events
+        </button>
+        <button
+          onClick={() => navigate("/about")}
+          className="text-sm text-zinc-400 hover:text-white transition-colors"
+        >
+          About
+        </button>
+        <button
+          onClick={() => navigate("/events")}
+          className="text-sm font-medium px-4 py-2 rounded-lg bg-lime-400 text-zinc-900 hover:bg-lime-300 transition-colors"
+        >
+          Get started
+        </button>
+      </nav>
+    </motion.header>
   );
 }
 
-export default Homepage;
+export default function Homepage() {
+  const navigate = useNavigate();
+
+  return (
+    <div className="min-h-screen" style={{ background: "#040f07" }}>
+      <Navbar navigate={navigate} />
+
+      {/* ── Hero ── */}
+      <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 overflow-hidden">
+        {/* Glow blobs */}
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-20 blur-3xl pointer-events-none"
+          style={{ background: "radial-gradient(circle, #a3e635 0%, transparent 70%)" }} />
+
+        {/* Badge */}
+        <motion.div
+          custom={0} variants={fadeUp} initial="hidden" animate="show"
+          className="mb-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-lime-400/30 bg-lime-400/10 text-lime-400 text-xs font-medium"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-lime-400 animate-pulse" />
+          SASEHacks 2024 · Best Environmental Hack
+        </motion.div>
+
+        <motion.h1
+          custom={1} variants={fadeUp} initial="hidden" animate="show"
+          className="text-6xl md:text-7xl lg:text-8xl font-bold text-white leading-[1.05] tracking-tight max-w-4xl"
+        >
+          Preserve your
+          <br />
+          <span style={{ color: "#a3e635" }}>pact</span> with Earth.
+        </motion.h1>
+
+        <motion.p
+          custom={2} variants={fadeUp} initial="hidden" animate="show"
+          className="mt-6 text-lg text-zinc-400 max-w-xl leading-relaxed"
+        >
+          A community platform for organizing and joining sustainability events —
+          clean-ups, plantings, and more. One trash bag at a time.
+        </motion.p>
+
+        <motion.div
+          custom={3} variants={fadeUp} initial="hidden" animate="show"
+          className="mt-8 flex items-center gap-4"
+        >
+          <button
+            onClick={() => navigate("/events")}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-zinc-900 transition-all hover:scale-105 active:scale-95"
+            style={{ background: "linear-gradient(135deg, #a3e635, #84cc16)" }}
+          >
+            Browse events
+            <ArrowRight size={16} />
+          </button>
+          <button
+            onClick={() => navigate("/about")}
+            className="px-6 py-3 rounded-xl font-medium text-zinc-300 border border-zinc-700 hover:border-zinc-500 transition-colors"
+          >
+            Meet the team
+          </button>
+        </motion.div>
+
+        {/* Hero image */}
+        <motion.div
+          custom={4} variants={fadeUp} initial="hidden" animate="show"
+          className="mt-20 relative"
+        >
+          <div className="absolute inset-0 rounded-3xl blur-2xl opacity-30"
+            style={{ background: "radial-gradient(circle, #a3e635, transparent)" }} />
+          <img
+            src="/assets/images/hero-home-background.svg"
+            alt="EnviroPact hero"
+            className="relative w-full max-w-3xl rounded-3xl opacity-90"
+          />
+        </motion.div>
+      </section>
+
+      {/* ── Features ── */}
+      <section className="py-32 px-6">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }} viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <p className="text-lime-400 text-sm font-medium tracking-widest uppercase mb-3">How it works</p>
+            <h2 className="text-4xl md:text-5xl font-bold text-white">
+              Everything you need to<br />make an impact
+            </h2>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {features.map((f, i) => (
+              <motion.div
+                key={f.step}
+                initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: i * 0.1 }} viewport={{ once: true }}
+                className="group relative rounded-2xl p-7 border border-white/5 hover:border-lime-400/20 transition-all duration-300"
+                style={{ background: "rgba(255,255,255,0.03)" }}
+              >
+                <div className="w-10 h-10 rounded-xl bg-lime-400/10 text-lime-400 flex items-center justify-center mb-5 group-hover:bg-lime-400/20 transition-colors">
+                  {f.icon}
+                </div>
+                <span className="text-xs font-mono text-zinc-600 mb-2 block">{f.step}</span>
+                <h3 className="text-xl font-semibold text-white mb-3">{f.title}</h3>
+                <p className="text-zinc-400 text-sm leading-relaxed">{f.body}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA Banner ── */}
+      <section className="py-24 px-6">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }} whileInView={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6 }} viewport={{ once: true }}
+          className="max-w-4xl mx-auto rounded-3xl p-12 text-center relative overflow-hidden"
+          style={{ background: "linear-gradient(135deg, #0d3b1a 0%, #1a5c2a 100%)", border: "1px solid rgba(163,230,53,0.15)" }}
+        >
+          <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl opacity-20 pointer-events-none"
+            style={{ background: "#a3e635", transform: "translate(30%, -30%)" }} />
+          <h2 className="text-4xl font-bold text-white mb-4">Ready to make an impact?</h2>
+          <p className="text-zinc-400 mb-8 text-lg">
+            Join thousands of community members already making a difference.
+          </p>
+          <button
+            onClick={() => navigate("/events")}
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-zinc-900 transition-all hover:scale-105 active:scale-95"
+            style={{ background: "linear-gradient(135deg, #a3e635, #84cc16)" }}
+          >
+            Find events near you
+            <ArrowRight size={16} />
+          </button>
+        </motion.div>
+      </section>
+
+      {/* ── Footer ── */}
+      <footer className="border-t border-white/5 py-8 px-6">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded-md bg-lime-400 flex items-center justify-center">
+              <img src="/assets/images/tree-icon.svg" className="w-4 h-4" />
+            </div>
+            <span className="text-sm font-semibold text-white">EnviroPact</span>
+          </div>
+          <p className="text-xs text-zinc-600">© 2024 EnviroPact · Built at SASEHacks</p>
+        </div>
+      </footer>
+    </div>
+  );
+}

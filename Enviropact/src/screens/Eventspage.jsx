@@ -1,359 +1,270 @@
-import React from "react";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Input } from "antd";
-import { signInWithGoogle } from "../auth/authService";
-import { useState, useEffect, useMemo } from "react";
-import EventCard from "../components/EventCard";
-import CreateEventBtn from "../components/CreateEventBtn";
-import { getEvents } from "../auth/firestore";
-import moment from 'moment';
-import { motion, useScroll, useTransform} from "framer-motion"; 
+import { motion, AnimatePresence } from "framer-motion";
+import { MapPin, Calendar, Users, Search, Plus, ArrowRight, Leaf } from "lucide-react";
+import { notification } from "antd";
 
+const MOCK_EVENTS = [
+  {
+    id: "1",
+    title: "Beach Cleanup at Santa Monica",
+    organization: "SoCal Green Initiative",
+    description: "Join us for a morning cleanup along the Santa Monica shoreline. Gloves and bags provided. All are welcome!",
+    location: "Santa Monica, CA",
+    date: "Nov 15, 2024",
+    time: "8:00 AM",
+    rsvpCount: 42,
+    tag: "Cleanup",
+    tagColor: "#3b82f6",
+  },
+  {
+    id: "2",
+    title: "Tree Planting in Griffith Park",
+    organization: "LA Urban Forestry",
+    description: "Help us plant 200 native trees throughout Griffith Park to restore the local ecosystem.",
+    location: "Los Angeles, CA",
+    date: "Nov 22, 2024",
+    time: "9:00 AM",
+    rsvpCount: 67,
+    tag: "Planting",
+    tagColor: "#22c55e",
+  },
+  {
+    id: "3",
+    title: "Community Garden Volunteer Day",
+    organization: "Eastside Roots",
+    description: "Volunteer at our community garden — weeding, planting, and composting. Great for families!",
+    location: "Boyle Heights, CA",
+    date: "Dec 1, 2024",
+    time: "10:00 AM",
+    rsvpCount: 28,
+    tag: "Garden",
+    tagColor: "#a3e635",
+  },
+  {
+    id: "4",
+    title: "E-Waste Recycling Drive",
+    organization: "TechCycle LA",
+    description: "Drop off old electronics for responsible recycling. We accept phones, laptops, monitors, and more.",
+    location: "Westwood, CA",
+    date: "Dec 7, 2024",
+    time: "11:00 AM",
+    rsvpCount: 93,
+    tag: "Recycling",
+    tagColor: "#f59e0b",
+  },
+  {
+    id: "5",
+    title: "Zero-Waste Cooking Workshop",
+    organization: "Sustainable Table",
+    description: "Learn how to cook delicious meals using every part of your ingredients and reduce food waste at home.",
+    location: "Silver Lake, CA",
+    date: "Dec 14, 2024",
+    time: "2:00 PM",
+    rsvpCount: 35,
+    tag: "Workshop",
+    tagColor: "#ec4899",
+  },
+  {
+    id: "6",
+    title: "Bike & Eco-Commuting Fair",
+    organization: "CicLAvia × EnviroPact",
+    description: "Free bike tune-ups and a showcase on how switching to cycling can cut your carbon footprint significantly.",
+    location: "Downtown LA, CA",
+    date: "Dec 21, 2024",
+    time: "10:00 AM",
+    rsvpCount: 51,
+    tag: "Fair",
+    tagColor: "#8b5cf6",
+  },
+];
 
+function EventCard({ event, index }) {
+  const [rsvped, setRsvped] = useState(false);
 
-import { Divider, notification, Space } from 'antd';
-const Context = React.createContext({
-  name: 'Default',
-});
-
-const { Search } = Input;
-
-function Eventspage() {
-  const [isSignedIn, setIsSignedIn] = useState(false);
-  const [events, setEvents] = useState([]); // State for events
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [eventsUserIsIn, setEventsUserIsIn] = useState([]);
-  const [eventsUserIsNotIn, setEventsUserIsNotIn] = useState([]);
-  const [eventsSearched, setEventsSearched] = useState([]);
-  const [searchInput, setSearchInput] = useState("");
-
-
-
-  const auth = getAuth();
-  const navigate = useNavigate();
-
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setIsSignedIn(true);
-        console.log("User is signed in: ", user.displayName);
-        openNotification('bottomRight', "Signed In!", `Welcome, ${user.displayName}!`);
-      } else {
-        setIsSignedIn(false);
-        console.log("No user is signed in");
-      }
+  const handleRsvp = () => {
+    if (rsvped) return;
+    setRsvped(true);
+    notification.success({
+      message: "You're in!",
+      description: `RSVP confirmed for "${event.title}"`,
+      placement: "bottomRight",
     });
-
-    return () => unsubscribe();
-  }, [auth]);
-
-  const openNotification = (placement, header, message) => {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    notification.info({
-      message: `${header}`,
-      description: `${message}`,
-      placement,
-    });
-  };
-
-
-
-  
-  const fetchEvents = async () => {
-    setLoading(true);
-  
-    try {
-      const fetchedEvents = await getEvents();
-  
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
-      const currentUserId = currentUser ? currentUser.uid : null;
-  
-      const sortedEvents = fetchedEvents.sort((a, b) => {
-        const dateTimeA = moment(`${a.date} ${a.time}`, 'YYYY-MM-DD h:mm A').toDate();
-        const dateTimeB = moment(`${b.date} ${b.time}`, 'YYYY-MM-DD h:mm A').toDate();
-        return dateTimeA - dateTimeB; // Ascending order
-      });
-  
-      const eventsUserIsIn = [];
-      const eventsUserIsNotIn = [];
-
-      // compare all the events title,
-      // if search input is a substring of tittle
-      // add to eventsSearched
-      
-    
-  
-      sortedEvents.forEach((event) => {
-        if (event.usersAttending?.includes(currentUserId)) {
-          eventsUserIsIn.push(event); // User is attending this event
-        } else if (!event.usersAttending?.includes(currentUserId)) {
-          eventsUserIsNotIn.push(event); // User is not attending this event
-        }
-      });
-  
-      // You can save the two categories of events into two different state variables
-      setEventsUserIsIn(eventsUserIsIn);
-      setEventsUserIsNotIn(eventsUserIsNotIn);
-  
-    } catch (err) {
-      setError(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-useEffect(() => {
-  fetchEvents(); // Fetch events on component mount
-}, []); // Empty dependency array ensures it only runs on mount
-
-  const handleSearchEvent = async () => {
-    const fetchedEvents = await getEvents();
-    const sortedEvents = fetchedEvents.sort((a, b) => {
-      const dateTimeA = moment(`${a.date} ${a.time}`, 'YYYY-MM-DD h:mm A').toDate();
-      const dateTimeB = moment(`${b.date} ${b.time}`, 'YYYY-MM-DD h:mm A').toDate();
-      return dateTimeA - dateTimeB; // Ascending order
-    });
-
-    console.log("HJSDBFHSBFSBHJLDFBSDHBF SDFBJSDBFBHSDJBFHSDFJSDBHJFBSDJHFBSDJHFBJHSDFB");
-    console.log("input is:", searchInput);
-
-    const eventsSearched = sortedEvents.filter((event) => {
-      console.log("event title is:", event.title);
-      const title = event.title?.toLowerCase() || ""; // Default to empty string if undefined
-      return title.includes(searchInput.toLowerCase());
-    });
-
-    if (searchInput != "") {
-      setEventsSearched(eventsSearched);
-    }
-    console.log("EVENTS SEARCHED", eventsSearched);
-  }
-
-  const handleSignIn = async () => {
-    try {
-      await signInWithGoogle();
-    } catch (error) {
-      console.error("Sign-in error:", error);
-    }
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      console.log("Successfully signed out");
-    } catch (error) {
-      console.error("Sign-out error:", error);
-    }
   };
 
   return (
-    <div className="relative">
-      <div id="navigation-bar" className="flex align-middle justify-center absolute left-0 top-0 w-full">
-      <motion.nav
-          className="w-3/8 px-4 py-4 backdrop-blur-md rounded-md bg-white/50  sticky top-5 flex justify-center items-center z-10 m-5"
-          initial={{ opacity: 0, y: -50 }} // Starting state (invisible and moved up)
-          animate={{ opacity: 1, y: 0 }} // End state (fully visible and back to position)
-          transition={{ duration: 0.3, ease: "easeOut" }} // Animation duration and easing
-        >
-          <ul className="flex items-center justify-center gap-5">
-            <li
-              className="flex items-center justify-center text-lg text-black geist-reg hover:cursor-pointer mr-20"
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: index * 0.06 }}
+      className="group relative rounded-2xl p-6 border transition-all duration-300 hover:border-white/10 hover:-translate-y-0.5"
+      style={{
+        background: "rgba(255,255,255,0.03)",
+        border: "1px solid rgba(255,255,255,0.06)",
+      }}
+    >
+      {/* Top row */}
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <span
+              className="text-xs font-medium px-2.5 py-0.5 rounded-full"
+              style={{ background: `${event.tagColor}18`, color: event.tagColor }}
             >
-              <img
-                src="../../assets/images/tree-icon.svg"
-                className="px-2 w-10"
-              />
-              <p className="text-green-950" onClick={() => navigate("/")} style={{cursor: "pointer"}}>EnviroPact</p>
-            </li>
-            <li>
-              
-            </li>
-            <li className="hover:text-white">
-              <a onClick={() => navigate("/about")} style={{cursor: "pointer"}}>Contact</a>
-            </li>
-            <li className="hover:text-white">
-              <a onClick={() => navigate("/events")} style={{cursor: "pointer"}}>Events</a>
-            </li>
-            <li>
-            {!isSignedIn && (
-          <Button
-            type="primary"
-            className="text-md text-black geist-reg"
-            style={{ background: "rgb(190, 242, 100)" }}
-            onClick={handleSignIn}
-          >
-            Sign In
-          </Button>
-        )}
-        {isSignedIn && (
-          <Button
-            type="primary"
-            className="text-md text-black geist-reg"
-            style={{ background: "rgb(190, 242, 100)" }}
-            onClick={handleSignOut}
-          >
-            Sign Out
-          </Button>
-        )}
-            </li>
-          </ul>
-        </motion.nav>
-        </div>
-      
-
-      {/* Body */}
-      <div className="bg-green-950 h-full min-h-screen flex flex-col items-center justify-start gap-4 pt-32">
-        <img
-          className="w-40"
-          src="../../assets/images/hand-with-sapling.svg"
-          alt=""
-        />
-        {/* Header */}
-        <div className="w-full flex flex-col items-center justify-center gap-4">
-          <h1 className="text-5xl text-white geist-reg">
-            Find events in your area.
-          </h1>
-          <p className="text-lg text-lime-300">
-            Make an impact. Plant your seed.
-          </p>
-        </div>
-
-        {/* Searchbar */}
-        <div className="flex items-center gap-4">
-          <Search
-            placeholder="search an event"
-            allowClear
-            enterButton={
-              <Button
-                className="text-sm"
-                style={{
-                  backgroundColor: "rgb(190, 242, 100)",
-                  borderColor: "rgb(190, 242, 100)",
-                  color: "black",
-                }}
-                onClick={handleSearchEvent}
-              >
-                Search
-              </Button>
-            }
-            size="large"
-            onSearch={() => {
-              console.log("CLICKED SEARCHHHHHHHH");
-            }}
-            style={{
-              width: 350,
-            }}
-            onChange={(e) => setSearchInput(e.target.value)}
-          
-          />
-          {isSignedIn && (
-            <CreateEventBtn
-              size="large"
-              className="flex items-center text-sm"
-              variant="filled"
-              
-              onEventCreated={fetchEvents} // Pass fetchEvents as a prop
-              postNotification = {openNotification}
-              fetchEvents={fetchEvents}
-            />
-          )}
-        </div>
-        <div className="flex flex-col gap-4">
-        {eventsSearched.length > 0 && (
-          <Divider 
-            orientation="middle" 
-            style={{
-              color: "white",
-              borderColor: "white"
-            }}>
-            Searched Events
-          </Divider>
-        )}
-
-          {eventsSearched.map((event) => (
-            <EventCard 
-              key={event.id} 
-              title={event.title} 
-              organization={event.organization} 
-              description={event.description} 
-              location={event.location} 
-              date={event.date} 
-              time={event.time} 
-              rsvpCount={event.rsvpCount} 
-              uniqueId={event.id}
-              owner={event.owner}
-              fetchEvents={fetchEvents}
-              postNotification = {openNotification}
-            />
-          ))}
-
-        {eventsUserIsIn.length > 0 && (
-          <Divider 
-            orientation="middle" 
-            style={{
-              color: "white",
-              borderColor: "white"
-            }}>
-            Joined Events
-          </Divider>
-        )}
-
-          {eventsUserIsIn.map((event) => (
-            <EventCard 
-              key={event.id} 
-              title={event.title} 
-              organization={event.organization} 
-              description={event.description} 
-              location={event.location} 
-              date={event.date} 
-              time={event.time} 
-              rsvpCount={event.rsvpCount} 
-              uniqueId={event.id}
-              owner={event.owner}
-              fetchEvents={fetchEvents}
-              postNotification = {openNotification}
-            />
-          ))}
-
-          {eventsUserIsNotIn.length > 0 && (
-            <Divider 
-              orientation="middle" 
-              style={{
-                color: "white",
-                borderColor: "white"
-              }}>
-              Future Events
-            </Divider>
-          )}
-
-          {eventsUserIsNotIn.map((event) => (
-            <EventCard 
-              key={event.id} 
-              title={event.title} 
-              organization={event.organization} 
-              description={event.description} 
-              location={event.location} 
-              date={event.date} 
-              time={event.time} 
-              rsvpCount={event.rsvpCount} 
-              uniqueId={event.id}
-              owner={event.owner}
-              fetchEvents={fetchEvents}
-              postNotification = {openNotification}
-            />
-          ))}
-          <div className="h-48">
-
+              {event.tag}
+            </span>
           </div>
+          <h3 className="text-lg font-semibold text-white leading-snug">{event.title}</h3>
+          <p className="text-sm text-zinc-500 mt-0.5">{event.organization}</p>
+        </div>
+        <div className="flex items-center gap-1 text-zinc-500 text-sm shrink-0">
+          <Users size={14} />
+          <span>{event.rsvpCount}</span>
+        </div>
+      </div>
+
+      <p className="text-sm text-zinc-400 leading-relaxed mb-4">{event.description}</p>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4 text-xs text-zinc-500">
+          <span className="flex items-center gap-1.5">
+            <MapPin size={12} />
+            {event.location}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Calendar size={12} />
+            {event.date} · {event.time}
+          </span>
+        </div>
+        <button
+          onClick={handleRsvp}
+          disabled={rsvped}
+          className="text-xs font-semibold px-4 py-2 rounded-lg transition-all duration-200 active:scale-95"
+          style={
+            rsvped
+              ? { background: "rgba(163,230,53,0.15)", color: "#a3e635" }
+              : { background: "#a3e635", color: "#0a1f0e" }
+          }
+        >
+          {rsvped ? "✓ RSVPed" : "RSVP"}
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+export default function Eventspage() {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+
+  const openDemoToast = () => {
+    notification.info({
+      message: "Demo Mode",
+      description: "Sign-in is disabled in this demo. In the live app you could create events too!",
+      placement: "bottomRight",
+    });
+  };
+
+  const filtered = MOCK_EVENTS.filter(
+    (e) =>
+      e.title.toLowerCase().includes(query.toLowerCase()) ||
+      e.organization.toLowerCase().includes(query.toLowerCase())
+  );
+
+  return (
+    <div className="min-h-screen" style={{ background: "#040f07" }}>
+      {/* Nav */}
+      <motion.header
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4 border-b border-white/5"
+        style={{ background: "rgba(4,15,7,0.85)", backdropFilter: "blur(16px)" }}
+        initial={{ opacity: 0, y: -16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <button onClick={() => navigate("/")} className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-lime-400 flex items-center justify-center">
+            <img src="/assets/images/tree-icon.svg" className="w-5 h-5" />
+          </div>
+          <span className="text-white font-bold text-lg tracking-tight">EnviroPact</span>
+        </button>
+        <nav className="flex items-center gap-8">
+          <button onClick={() => navigate("/events")} className="text-sm text-white font-medium">Events</button>
+          <button onClick={() => navigate("/about")} className="text-sm text-zinc-400 hover:text-white transition-colors">About</button>
+          <button
+            onClick={openDemoToast}
+            className="text-sm font-medium px-4 py-2 rounded-lg bg-lime-400 text-zinc-900 hover:bg-lime-300 transition-colors"
+          >
+            Sign in
+          </button>
+        </nav>
+      </motion.header>
+
+      <div className="pt-28 pb-24 px-6 max-w-4xl mx-auto">
+        {/* Page header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-12 text-center"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-lime-400/30 bg-lime-400/10 text-lime-400 text-xs font-medium mb-5">
+            <Leaf size={12} />
+            Community events near you
+          </div>
+          <h1 className="text-5xl font-bold text-white mb-3 tracking-tight">Find your next event.</h1>
+          <p className="text-zinc-400 text-lg">Make an impact. Plant your seed.</p>
+        </motion.div>
+
+        {/* Search + create */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="flex gap-3 mb-10"
+        >
+          <div className="flex-1 relative">
+            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
+            <input
+              type="text"
+              placeholder="Search events..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full pl-11 pr-4 py-3 rounded-xl text-sm text-white placeholder-zinc-500 outline-none transition-all border focus:border-lime-400/40"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
+            />
+          </div>
+          <button
+            onClick={openDemoToast}
+            className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium text-zinc-900 transition-colors hover:bg-lime-300"
+            style={{ background: "#a3e635" }}
+          >
+            <Plus size={16} />
+            Create
+          </button>
+        </motion.div>
+
+        {/* Count */}
+        <div className="text-xs text-zinc-600 mb-5 font-medium">
+          {filtered.length} event{filtered.length !== 1 ? "s" : ""}
+        </div>
+
+        {/* Cards */}
+        <div className="flex flex-col gap-4">
+          <AnimatePresence>
+            {filtered.map((event, i) => (
+              <EventCard key={event.id} event={event} index={i} />
+            ))}
+          </AnimatePresence>
+          {filtered.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              className="text-center py-20 text-zinc-600"
+            >
+              <Leaf size={32} className="mx-auto mb-3 opacity-40" />
+              <p>No events found for "{query}"</p>
+            </motion.div>
+          )}
         </div>
       </div>
     </div>
   );
 }
-
-export default Eventspage;
