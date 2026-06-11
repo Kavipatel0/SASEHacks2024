@@ -3,10 +3,38 @@
 @tailwind utilities;
 
 @font-face {
-    font-family: geist-reg;
-    src: url(../assets/fonts/GEIST-REGULAR.TTF);
-  }
-  
-  .giest-reg {
-    font-family: geist-reg;
-  }
+  font-family: 'Geist';
+  src: url('/assets/fonts/GEIST-REGULAR.TTF') format('truetype');
+  font-weight: 400;
+}
+@font-face {
+  font-family: 'Geist';
+  src: url('/assets/fonts/GEIST-MEDIUM.TTF') format('truetype');
+  font-weight: 500;
+}
+@font-face {
+  font-family: 'Geist';
+  src: url('/assets/fonts/GEIST-BOLD.TTF') format('truetype');
+  font-weight: 700;
+}
+
+* {
+  font-family: 'Geist', system-ui, sans-serif;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #040f07;
+  color: #fff;
+  margin: 0;
+  padding: 0;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #040f07; }
+::-webkit-scrollbar-thumb { background: #1a4025; border-radius: 3px; }
