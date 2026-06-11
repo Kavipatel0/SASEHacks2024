@@ -95,7 +95,7 @@ export default function Homepage() {
           className="mb-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-lime-400/30 bg-lime-400/10 text-lime-400 text-xs font-medium"
         >
           <span className="w-1.5 h-1.5 rounded-full bg-lime-400 animate-pulse" />
-          SASEHacks 2024 · Best Environmental Hack
+          SASEHacks 2024
         </motion.div>
 
         <motion.h1
